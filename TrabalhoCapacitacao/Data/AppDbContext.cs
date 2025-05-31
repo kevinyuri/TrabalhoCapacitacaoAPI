@@ -5,8 +5,6 @@ namespace TrabalhoCapacitacao.Data
 {
     public class AppDbContext : DbContext
     {
-        // Construtor que permite a configuração do DbContext (ex: connection string)
-        // ser injetada a partir da classe Startup.cs ou Program.cs
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
@@ -35,14 +33,8 @@ namespace TrabalhoCapacitacao.Data
             // Configuração da Entidade Vaga
             modelBuilder.Entity<Vaga>(entity =>
             {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Id).ValueGeneratedOnAdd();
-                // Se você quiser ser explícito sobre o SQL Server usar NEWSEQUENTIALID() (melhor para PK clusterizada):
-                // entity.Property(e => e.Id).HasDefaultValueSql("NEWSEQUENTIALID()");
-                // Ou NEWID():
-                //entity.Property(e => e.Id).HasDefaultValueSql("NEWID()");
-
-
+                entity.HasKey(e => e.Id); // Define a chave primária
+                entity.Property(e => e.Id).HasDefaultValueSql("NEWID()");
                 entity.Property(e => e.Titulo).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Descricao).IsRequired();
                 entity.Property(e => e.Empresa).HasMaxLength(100);
@@ -65,36 +57,35 @@ namespace TrabalhoCapacitacao.Data
             // Configuração da Entidade Inscricao
             modelBuilder.Entity<Inscricao>(entity =>
             {
-                entity.HasKey(e => e.Id);
+                entity.HasKey(e => e.Id); // Define a chave primária
                 entity.Property(e => e.UsuarioId).IsRequired();
-
-                // VagaId é Guid? e é uma chave estrangeira para Vaga.Id (que é Guid)
-                entity.Property(e => e.VagaId).IsRequired(false);
-
-                entity.Property(e => e.CursoId).IsRequired(false); // Supondo que Curso.Id seja string
+                entity.Property(e => e.VagaId).IsRequired(false); // Permite nulo
+                entity.Property(e => e.CursoId).IsRequired(false); // Permite nulo
                 entity.Property(e => e.DataInscricao).IsRequired();
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
 
+                // Relacionamento: Uma Inscrição pertence a um Usuário
                 entity.HasOne(i => i.Usuario)
                       .WithMany(u => u.Inscricoes)
                       .HasForeignKey(i => i.UsuarioId)
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // Relacionamento com Vaga (Vaga.Id é Guid)
+                // Relacionamento: Uma Inscrição pode pertencer a uma Vaga (opcional)
                 entity.HasOne(i => i.Vaga)
-                      .WithMany(v => v.Inscricoes)
-                      .HasForeignKey(i => i.VagaId) // Chave estrangeira VagaId (Guid?)
-                      .IsRequired(false)
+                      .WithMany(v => v.Inscricoes) // Uma vaga pode ter muitas inscrições
+                      .HasForeignKey(i => i.VagaId)
+                      .IsRequired(false) // A chave estrangeira é opcional
                       .OnDelete(DeleteBehavior.Restrict);
 
-                // Supondo que Curso.Id seja string
+                // Relacionamento: Uma Inscrição pode pertencer a um Curso (opcional)
                 entity.HasOne(i => i.Curso)
-                      .WithMany(c => c.Inscricoes)
+                      .WithMany(c => c.Inscricoes) // Um curso pode ter muitas inscrições
                       .HasForeignKey(i => i.CursoId)
-                      .IsRequired(false)
+                      .IsRequired(false) // A chave estrangeira é opcional
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
         }
     }
+
 }

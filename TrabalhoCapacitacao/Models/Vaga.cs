@@ -1,11 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-
-namespace TrabalhoCapacitacao.Models
+﻿namespace TrabalhoCapacitacao.Models
 {
     public class Vaga
     {
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid Id { get; set; } // PK
+        public string Id { get; set; } // PK
         public string Titulo { get; set; }
         public string Descricao { get; set; }
         public string Empresa { get; set; }

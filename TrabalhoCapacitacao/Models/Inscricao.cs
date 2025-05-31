@@ -4,7 +4,7 @@
     {
         public string Id { get; set; } // PK
         public string UsuarioId { get; set; } // FK
-        public Guid? VagaId { get; set; } // FK, pode ser nulo se for inscrição em curso
+        public string? VagaId { get; set; } // FK, pode ser nulo se for inscrição em curso
         public string? CursoId { get; set; } // FK, pode ser nulo se for inscrição em vaga
         public DateTime DataInscricao { get; set; }
         public string Status { get; set; }

@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿namespace TrabalhoCapacitacao.Controllers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TrabalhoCapacitacao.Data;
 using TrabalhoCapacitacao.DTOs.Vaga;
+using TrabalhoCapacitacao.Models;
+
 // using Microsoft.AspNetCore.Authorization;
 
 // Certifique-se de que os namespaces dos seus DTOs e Modelos estão corretos
@@ -27,7 +30,7 @@ public class VagasController : ControllerBase
         var vagas = await _context.Vagas
             .Select(v => new VagaResponseDto
             {
-                Id = v.Id, // v.Id agora é Guid
+                Id = v.Id,
                 Titulo = v.Titulo,
                 Descricao = v.Descricao,
                 Empresa = v.Empresa,
@@ -40,8 +43,8 @@ public class VagasController : ControllerBase
     }
 
     // GET: api/Vagas/{id}
-    [HttpGet("{id:guid}")] // Adicionado constraint de rota para Guid
-    public async Task<ActionResult<VagaResponseDto>> GetVaga(Guid id) // Parâmetro id agora é Guid
+    [HttpGet("{id}")]
+    public async Task<ActionResult<VagaResponseDto>> GetVaga(string id)
     {
         var vaga = await _context.Vagas.FindAsync(id);
 
@@ -69,6 +72,7 @@ public class VagasController : ControllerBase
     // [Authorize(Roles = "empresa,admin")]
     public async Task<ActionResult<VagaResponseDto>> PostVaga([FromBody] VagaCreateDto vagaCreateDto)
     {
+        // ModelState é preenchido automaticamente com erros de validação dos DataAnnotations
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
@@ -76,31 +80,28 @@ public class VagasController : ControllerBase
 
         var vaga = new Vaga
         {
-            // O Id NÃO é definido aqui. O banco de dados irá gerá-lo.
             Titulo = vagaCreateDto.Titulo,
             Descricao = vagaCreateDto.Descricao,
             Empresa = vagaCreateDto.Empresa,
             Local = vagaCreateDto.Local,
             TipoContrato = vagaCreateDto.TipoContrato,
-            DataPublicacao = DateTime.UtcNow
+            DataPublicacao = DateTime.UtcNow // Definir data de publicação no servidor
         };
 
         _context.Vagas.Add(vaga);
-
         try
         {
             await _context.SaveChangesAsync();
-            // Após SaveChangesAsync, vaga.Id será populado com o valor gerado pelo banco.
         }
         catch (DbUpdateException ex)
         {
-            Console.WriteLine($"Erro ao salvar vaga: {ex.ToString()}");
+            // Logar o erro ex
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro ao salvar a vaga no banco de dados." });
         }
 
         var vagaResponseDto = new VagaResponseDto
         {
-            Id = vaga.Id, // vaga.Id agora tem o valor gerado pelo DB
+            Id = vaga.Id,
             Titulo = vaga.Titulo,
             Descricao = vaga.Descricao,
             Empresa = vaga.Empresa,
@@ -109,14 +110,13 @@ public class VagasController : ControllerBase
             DataPublicacao = vaga.DataPublicacao
         };
 
-        // Retorna 201 Created com a localização do novo recurso e o recurso criado
         return CreatedAtAction(nameof(GetVaga), new { id = vaga.Id }, vagaResponseDto);
     }
 
     // PUT: api/Vagas/{id}
-    [HttpPut("{id:guid}")] // Adicionado constraint de rota para Guid
+    [HttpPut("{id}")]
     // [Authorize(Roles = "empresa,admin")]
-    public async Task<IActionResult> PutVaga(Guid id, [FromBody] VagaUpdateDto vagaUpdateDto) // Parâmetro id agora é Guid
+    public async Task<IActionResult> PutVaga(string id, [FromBody] VagaUpdateDto vagaUpdateDto)
     {
         if (!ModelState.IsValid)
         {
@@ -130,11 +130,13 @@ public class VagasController : ControllerBase
             return NotFound(new { message = $"Vaga com ID {id} não encontrada para atualização." });
         }
 
+        // Mapear os campos do DTO para a entidade existente
         vagaExistente.Titulo = vagaUpdateDto.Titulo;
         vagaExistente.Descricao = vagaUpdateDto.Descricao;
         vagaExistente.Empresa = vagaUpdateDto.Empresa;
         vagaExistente.Local = vagaUpdateDto.Local;
         vagaExistente.TipoContrato = vagaUpdateDto.TipoContrato;
+        // vagaExistente.DataPublicacao = DateTime.UtcNow; // Se quiser atualizar a data a cada modificação
 
         _context.Entry(vagaExistente).State = EntityState.Modified;
 
@@ -144,10 +146,10 @@ public class VagasController : ControllerBase
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            Console.WriteLine($"Erro de concorrência ao atualizar vaga: {ex.ToString()}");
-            if (!await VagaExistsAsync(id))
+            // Logar o erro ex
+            if (!VagaExists(id))
             {
-                return NotFound(new { message = $"Vaga com ID {id} não encontrada (concorrência)." });
+                return NotFound(new { message = $"Vaga com ID {id} não encontrada durante a tentativa de salvar (concorrência)." });
             }
             else
             {
@@ -156,17 +158,17 @@ public class VagasController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            Console.WriteLine($"Erro ao atualizar vaga: {ex.ToString()}");
+            // Logar o erro ex
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro ao atualizar a vaga no banco de dados." });
         }
 
-        return NoContent();
+        return NoContent(); // Sucesso, sem conteúdo para retornar
     }
 
     // DELETE: api/Vagas/{id}
-    [HttpDelete("{id:guid}")] // Adicionado constraint de rota para Guid
+    [HttpDelete("{id}")]
     // [Authorize(Roles = "empresa,admin")]
-    public async Task<IActionResult> DeleteVaga(Guid id) // Parâmetro id agora é Guid
+    public async Task<IActionResult> DeleteVaga(string id)
     {
         var vaga = await _context.Vagas.FindAsync(id);
         if (vaga == null)
@@ -177,7 +179,7 @@ public class VagasController : ControllerBase
         var inscricoesAssociadas = await _context.Inscricoes.AnyAsync(i => i.VagaId == id);
         if (inscricoesAssociadas)
         {
-            return BadRequest(new { message = "Não é possível excluir a vaga pois existem inscrições associadas a ela." });
+            return BadRequest(new { message = "Não é possível excluir a vaga pois existem inscrições associadas a ela. Remova as inscrições primeiro." });
         }
 
         _context.Vagas.Remove(vaga);
@@ -187,15 +189,15 @@ public class VagasController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
-            Console.WriteLine($"Erro ao excluir vaga: {ex.ToString()}");
+            // Logar o erro ex
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro ao excluir a vaga no banco de dados." });
         }
 
         return NoContent();
     }
 
-    private async Task<bool> VagaExistsAsync(Guid id) // Parâmetro id agora é Guid
+    private bool VagaExists(string id)
     {
-        return await _context.Vagas.AnyAsync(e => e.Id == id);
+        return _context.Vagas.Any(e => e.Id == id);
     }
 }

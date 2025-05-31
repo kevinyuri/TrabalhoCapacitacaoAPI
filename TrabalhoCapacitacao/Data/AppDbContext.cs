@@ -23,11 +23,15 @@ namespace TrabalhoCapacitacao.Data
             modelBuilder.Entity<Usuario>(entity =>
             {
                 entity.HasKey(e => e.Id); // Define a chave primária
+                entity.Property(e => e.Id).HasDefaultValueSql("NEWID()");
                 entity.Property(e => e.Nome).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
                 entity.HasIndex(e => e.Email).IsUnique(); // Garante que o email seja único
                 entity.Property(e => e.Perfil).HasMaxLength(50);
                 entity.Property(e => e.Telefone).HasMaxLength(20);
+                entity.Property(e => e.SenhaHash).IsRequired();
+
+
             });
 
             // Configuração da Entidade Vaga
@@ -47,6 +51,7 @@ namespace TrabalhoCapacitacao.Data
             modelBuilder.Entity<Curso>(entity =>
             {
                 entity.HasKey(e => e.Id); // Define a chave primária
+                entity.Property(e => e.Id).HasDefaultValueSql("NEWID()");
                 entity.Property(e => e.Nome).IsRequired().HasMaxLength(150);
                 entity.Property(e => e.Instituicao).HasMaxLength(100);
                 entity.Property(e => e.CargaHoraria).HasMaxLength(50);
@@ -58,6 +63,7 @@ namespace TrabalhoCapacitacao.Data
             modelBuilder.Entity<Inscricao>(entity =>
             {
                 entity.HasKey(e => e.Id); // Define a chave primária
+                entity.Property(e => e.Id).HasDefaultValueSql("NEWID()");
                 entity.Property(e => e.UsuarioId).IsRequired();
                 entity.Property(e => e.VagaId).IsRequired(false); // Permite nulo
                 entity.Property(e => e.CursoId).IsRequired(false); // Permite nulo

@@ -7,10 +7,6 @@ using TrabalhoCapacitacao.Models;
 
 // using Microsoft.AspNetCore.Authorization;
 
-// Certifique-se de que os namespaces dos seus DTOs e Modelos estão corretos
-// Ex: using SeuProjeto.Models;
-// Ex: using SeuProjeto.Dtos.VagaDtos;
-
 [ApiController]
 [Route("api/[controller]")]
 // [Authorize]

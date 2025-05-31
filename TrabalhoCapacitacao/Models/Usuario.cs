@@ -7,6 +7,7 @@
         public string Email { get; set; }
         public string Perfil { get; set; } // Ex: "candidato", "empresa", "admin"
         public string Telefone { get; set; }
+        public string SenhaHash { get; set; }
 
         // Relacionamento: Um usuário pode ter várias inscrições
         public virtual ICollection<Inscricao> Inscricoes { get; set; }

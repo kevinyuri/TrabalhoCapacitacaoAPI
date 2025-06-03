@@ -72,20 +72,6 @@ builder.Services.AddAuthorization(options =>
 // Adicionar serviços de controllers
 builder.Services.AddControllers();
 
-// Configurar CORS (Cross-Origin Resource Sharing) - importante para frontend Angular
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngularDevClient",
-        policyBuilder =>
-        {
-            policyBuilder.WithOrigins("http://localhost:4200") // URL do seu cliente Angular em desenvolvimento
-                   .AllowAnyHeader()
-                   .AllowAnyMethod();
-            // Em produção, seja mais restritivo com as origens, headers e métodos.
-        });
-    // Adicione outras políticas de CORS se necessário
-});
-
 
 // Configurar Swagger/OpenAPI para documentação e teste da API (útil em desenvolvimento)
 builder.Services.AddEndpointsApiExplorer();
@@ -117,12 +103,8 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-// 2. Configurar o Pipeline de Requisições HTTP
-
 var app = builder.Build();
-
-// Usar Swagger apenas em ambiente de desenvolvimento
-
+app.UseCors(options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -134,9 +116,6 @@ app.UseSwaggerUI(c =>
 // Redirecionar HTTP para HTTPS (recomendado em produção)
 app.UseHttpsRedirection();
 
-// Usar CORS - deve vir antes de UseAuthentication e UseAuthorization
-// Use a política que você definiu. Em desenvolvimento, pode ser mais permissivo.
-app.UseCors("AllowAngularDevClient"); // Ou uma política mais restritiva para produção
 
 // Adicionar middleware de Autenticação
 app.UseAuthentication();

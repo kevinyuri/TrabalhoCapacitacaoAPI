@@ -85,79 +85,78 @@ namespace TrabalhoCapacitacao.Controllers
         }
 
         // POST: api/Usuarios/login
-        //[HttpPost("login")]
-        //[AllowAnonymous] // Permitir acesso anónimo para login
-        //public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
+        [HttpPost("login")]
+        [AllowAnonymous] // Permitir acesso anónimo para login
+        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        //    var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Email == loginDto.Email);
 
-        //    if (usuario == null)
-        //    {
-        //        // Resposta genérica para não revelar se o e-mail existe ou não
-        //        return Unauthorized(new { message = "Credenciais inválidas." });
-        //    }
+            if (usuario == null)
+            {
+                // Resposta genérica para não revelar se o e-mail existe ou não
+                return Unauthorized(new { message = "Credenciais inválidas." });
+            }
 
-        //    // Verificar a senha
-        //    // O primeiro argumento para VerifyHashedPassword pode ser null se não usou 'user' no HashPassword
-        //    var resultadoPassword = _passwordHasher.VerifyHashedPassword(null, usuario.SenhaHash, loginDto.Senha);
-        //    if (resultadoPassword == PasswordVerificationResult.Failed)
-        //    {
-        //        return Unauthorized(new { message = "Credenciais inválidas." });
-        //    }
-        //    // Se resultadoPassword for PasswordVerificationResult.SuccessRehashNeeded,
-        //    // você pode querer fazer o re-hash da senha e atualizar no banco (para maior segurança futura).
+            // Verificar a senha
+            // O primeiro argumento para VerifyHashedPassword pode ser null se não usou 'user' no HashPassword
+            var resultadoPassword = _passwordHasher.VerifyHashedPassword(null, usuario.SenhaHash, loginDto.Senha);
+            if (resultadoPassword == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized(new { message = "Credenciais inválidas." });
+            }
+            // Se resultadoPassword for PasswordVerificationResult.SuccessRehashNeeded,
+            // você pode querer fazer o re-hash da senha e atualizar no banco (para maior segurança futura).
 
-        //    //    // Se a senha estiver correta, gerar o token JWT
-        //    //    var claims = new List<Claim>
-        //    //{
-        //    //    new Claim(ClaimTypes.NameIdentifier, usuario.Id), // ID do utilizador (sub)
-        //    //    new Claim(ClaimTypes.Email, usuario.Email),
-        //    //    new Claim(ClaimTypes.Name, usuario.Nome), // Nome para exibição
-        //    //    new Claim(ClaimTypes.Role, usuario.Perfil) // Adiciona o perfil como um role
-        //    //    // Adicione outros claims conforme necessário (ex: roles específicos)
-        //    //};
+            //    // Se a senha estiver correta, gerar o token JWT
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, usuario.Id), // ID do utilizador (sub)
+                new Claim(ClaimTypes.Email, usuario.Email),
+                new Claim(ClaimTypes.Name, usuario.Nome), // Nome para exibição
+                new Claim(ClaimTypes.Role, usuario.Perfil) // Adiciona o perfil como um role
+            };
 
-        //    var jwtSecret = _configuration["JWT:Secret"];
-        //    if (string.IsNullOrEmpty(jwtSecret))
-        //    {
-        //        // Log de erro crítico: a chave secreta JWT não está configurada.
-        //        Console.WriteLine("Erro crítico: Chave secreta JWT não configurada em appsettings.json.");
-        //        return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro de configuração do servidor." });
-        //    }
-        //    var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
-        //    var credenciais = new SigningCredentials(jwtKey, SecurityAlgorithms.HmacSha256Signature); // Usar HmacSha256Signature
+            var jwtSecret = _configuration["JWT:Secret"];
+            if (string.IsNullOrEmpty(jwtSecret))
+            {
+                // Log de erro crítico: a chave secreta JWT não está configurada.
+                Console.WriteLine("Erro crítico: Chave secreta JWT não configurada em appsettings.json.");
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Erro de configuração do servidor." });
+            }
+            var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+            var credenciais = new SigningCredentials(jwtKey, SecurityAlgorithms.HmacSha256Signature); // Usar HmacSha256Signature
 
-        //    var tokenDescriptor = new SecurityTokenDescriptor
-        //    {
-        //        Subject = new ClaimsIdentity(claims),
-        //        Expires = DateTime.UtcNow.AddHours(1), // Tempo de expiração do token (ex: 1 hora) - configure conforme necessário
-        //        Audience = _configuration["JWT:ValidAudience"],
-        //        Issuer = _configuration["JWT:ValidIssuer"],
-        //        SigningCredentials = credenciais
-        //    };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1), // Tempo de expiração do token (ex: 1 hora) - configure conforme necessário
+                Audience = _configuration["JWT:ValidAudience"],
+                Issuer = _configuration["JWT:ValidIssuer"],
+                SigningCredentials = credenciais
+            };
 
-        //    var tokenHandler = new JwtSecurityTokenHandler();
-        //    var token = tokenHandler.CreateToken(tokenDescriptor);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
 
-        //    return Ok(new
-        //    {
-        //        token = tokenHandler.WriteToken(token),
-        //        expiration = token.ValidTo,
-        //        usuario = new UsuarioResponseDto // Retornar também os dados do utilizador
-        //        {
-        //            Id = usuario.Id,
-        //            Nome = usuario.Nome,
-        //            Email = usuario.Email,
-        //            Perfil = usuario.Perfil,
-        //            Telefone = usuario.Telefone
-        //        }
-        //    });
-        //}
+            return Ok(new
+            {
+                token = tokenHandler.WriteToken(token),
+                expiration = token.ValidTo,
+                usuario = new UsuarioResponseDto // Retornar também os dados do utilizador
+                {
+                    Id = usuario.Id,
+                    Nome = usuario.Nome,
+                    Email = usuario.Email,
+                    Perfil = usuario.Perfil,
+                    Telefone = usuario.Telefone
+                }
+            });
+        }
 
 
         // GET: api/Usuarios/{id}
